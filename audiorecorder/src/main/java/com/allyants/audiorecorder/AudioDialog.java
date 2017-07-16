@@ -298,19 +298,21 @@ public class AudioDialog {
     }
 
     public void stop(File file) {
-        if(thread.isAlive()){
+        if(thread != null && thread.isAlive()){
             thread.interrupt();
         }
         isListening = false;
-        try {
-            mediaRecorder.stop();
-        }catch (RuntimeException ex){
-            onDoneRecordingListener.onFailure(ex.toString());
+        if(mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+            } catch (RuntimeException ex) {
+                onDoneRecordingListener.onFailure(ex.toString());
+                mediaRecorder.release();
+                mediaRecorder = null;
+                return;
+            }
             mediaRecorder.release();
-            mediaRecorder = null;
-            return;
         }
-        mediaRecorder.release();
         mediaRecorder = null;
         if(file != null) {
             onDoneRecordingListener.onSuccess(file);
