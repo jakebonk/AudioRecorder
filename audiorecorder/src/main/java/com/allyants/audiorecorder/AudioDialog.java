@@ -12,6 +12,7 @@ import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -34,6 +35,8 @@ public class AudioDialog {
     private File outfile = null;
     long startTime;
     AlertDialog ad;
+    AlertDialog.Builder builder;
+    View dialogLayout;
 
     public interface OnClick{
         boolean onClick();
@@ -51,6 +54,13 @@ public class AudioDialog {
             return true;
         }
     };
+    private OnClick onStartClick = new OnClick() {
+        @Override
+        public boolean onClick() {
+            return true;
+        }
+    };
+
 
     private OnDoneRecording onDoneRecordingListener = new OnDoneRecording() {
         @Override
@@ -79,6 +89,11 @@ public class AudioDialog {
         return this;
     }
 
+    public AudioDialog setOnStartRecordingClickListener(OnClick onClick){
+        this.onStartClick = onClick;
+        return this;
+    }
+
     public AudioDialog setOnDoneClickListener(OnClick onClick){
         this.onDoneClick = onClick;
         return this;
@@ -96,23 +111,59 @@ public class AudioDialog {
 
     public AudioDialog show(){
         LayoutInflater inflater = LayoutInflater.from(context);
-        View dialogLayout = inflater.inflate(R.layout.audio_recorder_layout,null);
+        dialogLayout = inflater.inflate(R.layout.audio_recorder_layout,null);
+        builder = new AlertDialog.Builder(context);
+        builder.setView(dialogLayout);
+        ad = builder.show();
+        RelativeLayout rlRecording = (RelativeLayout)dialogLayout.findViewById(R.id.rlRecording);
+        rlRecording.setVisibility(View.GONE);
+        RelativeLayout rlStart = (RelativeLayout)dialogLayout.findViewById(R.id.rlStart);
+        rlStart.setVisibility(View.VISIBLE);
+        Button btnCancel = (Button)dialogLayout.findViewById(R.id.btnCancel2);
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(onCancelClick.onClick()) {
+                    onDestroy();
+                    ad.dismiss();
+                }
+            }
+        });
+        Button btnStart = (Button)dialogLayout.findViewById(R.id.btnStart);
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(onStartClick.onClick())
+                    startShow();
+            }
+        });
+        return this;
+    }
+
+    private void startShow(){
+        RelativeLayout rlRecording = (RelativeLayout)dialogLayout.findViewById(R.id.rlRecording);
+        rlRecording.setVisibility(View.VISIBLE);
+        RelativeLayout rlStart = (RelativeLayout)dialogLayout.findViewById(R.id.rlStart);
+        rlStart.setVisibility(View.GONE);
         final TextView tvTime = (TextView)dialogLayout.findViewById(R.id.tvTime);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
         Button btnDone = (Button)dialogLayout.findViewById(R.id.btnDone);
         Button btnCancel = (Button)dialogLayout.findViewById(R.id.btnCancel);
         btnDone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(onDoneClick.onClick())
+                if(onDoneClick.onClick()) {
+                    stop(outfile);
                     ad.dismiss();
+                }
             }
         });
         btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(onCancelClick.onClick())
+                if(onCancelClick.onClick()) {
+                    onDestroy();
                     ad.dismiss();
+                }
             }
         });
         final SeekBar seekBar = (SeekBar)dialogLayout.findViewById(R.id.seekBar);
@@ -123,7 +174,7 @@ public class AudioDialog {
             }
         });
         seekBar.setMax(32767);
-        builder.setView(dialogLayout);
+
         builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
@@ -134,7 +185,6 @@ public class AudioDialog {
         try {
             resetRecorder();
             startRecording();
-            ad = builder.show();
             startTime = SystemClock.uptimeMillis();
             thread = new Thread(new Runnable() {
                 @Override
@@ -156,7 +206,6 @@ public class AudioDialog {
         } catch (IOException e) {
             onDoneRecordingListener.onFailure(e.getMessage());
         }
-        return this;
     }
 
     private String longToTime(long diff){
@@ -218,8 +267,8 @@ public class AudioDialog {
         }
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        mediaRecorder.setAudioEncodingBitRate(16);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.HE_AAC);
+        mediaRecorder.setAudioEncodingBitRate(96000);
         mediaRecorder.setAudioSamplingRate(44100);
         mediaRecorder.setOutputFile(outfile.getAbsolutePath());
         try {
@@ -242,10 +291,13 @@ public class AudioDialog {
     }
 
     private void onDestroy(){
-        stop();
+        if(outfile != null){
+            outfile.delete();
+        }
+        stop(null);
     }
 
-    public void stop() {
+    public void stop(File file) {
         if(thread.isAlive()){
             thread.interrupt();
         }
@@ -254,10 +306,19 @@ public class AudioDialog {
             mediaRecorder.stop();
         }catch (RuntimeException ex){
             onDoneRecordingListener.onFailure(ex.toString());
+            mediaRecorder.release();
+            mediaRecorder = null;
+            return;
         }
         mediaRecorder.release();
         mediaRecorder = null;
-        onDoneRecordingListener.onSuccess(outfile);
+        if(file != null) {
+            onDoneRecordingListener.onSuccess(file);
+            return;
+        }else{
+            onDoneRecordingListener.onFailure("File is null");
+            return;
+        }
     }
 
 }
