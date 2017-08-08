@@ -115,8 +115,9 @@ public class AudioDialog {
     }
 
     public void setType(int type){
-        if(builder != null)
+        if(builder != null) {
             builder.create().getWindow().setType(type);
+        }
     }
 
     public AudioDialog show(){
