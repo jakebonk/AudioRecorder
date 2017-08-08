@@ -111,14 +111,17 @@ public class AudioDialog {
     }
 
     public void setType(int type){
-        builder.create().getWindow().setType(type);
+        if(builder != null)
+            builder.create().getWindow().setType(type);
     }
 
     public AudioDialog show(){
         LayoutInflater inflater = LayoutInflater.from(context);
         dialogLayout = inflater.inflate(R.layout.audio_recorder_layout,null);
-        builder.setView(dialogLayout);
-        ad = builder.show();
+        if(builder != null) {
+            builder.setView(dialogLayout);
+            ad = builder.show();
+        }
         RelativeLayout rlRecording = (RelativeLayout)dialogLayout.findViewById(R.id.rlRecording);
         rlRecording.setVisibility(View.GONE);
         RelativeLayout rlStart = (RelativeLayout)dialogLayout.findViewById(R.id.rlStart);
@@ -129,7 +132,8 @@ public class AudioDialog {
             public void onClick(View view) {
                 if(onCancelClick.onClick()) {
                     onDestroy();
-                    ad.dismiss();
+                    if(builder != null)
+                        ad.dismiss();
                 }
             }
         });
@@ -142,6 +146,10 @@ public class AudioDialog {
             }
         });
         return this;
+    }
+
+    public View getView(){
+        return dialogLayout;
     }
 
     private void startShow(){
@@ -157,7 +165,8 @@ public class AudioDialog {
             public void onClick(View view) {
                 if(onDoneClick.onClick()) {
                     stop(outfile);
-                    ad.dismiss();
+                    if(builder != null)
+                        ad.dismiss();
                 }
             }
         });
@@ -166,7 +175,8 @@ public class AudioDialog {
             public void onClick(View view) {
                 if(onCancelClick.onClick()) {
                     onDestroy();
-                    ad.dismiss();
+                    if(builder != null)
+                        ad.dismiss();
                 }
             }
         });
@@ -178,14 +188,15 @@ public class AudioDialog {
             }
         });
         seekBar.setMax(32767);
-
-        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialogInterface) {
-                Long time = SystemClock.uptimeMillis() - startTime;
-                AudioDialog.this.onDestroy();
-            }
-        });
+        if(builder != null) {
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialogInterface) {
+                    Long time = SystemClock.uptimeMillis() - startTime;
+                    AudioDialog.this.onDestroy();
+                }
+            });
+        }
         try {
             resetRecorder();
             startRecording();
