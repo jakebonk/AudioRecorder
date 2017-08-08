@@ -79,6 +79,10 @@ public class AudioDialog {
 
     }
 
+    public AudioDialog(Context context){
+        this.context = context;
+    }
+
     public interface OnDoneRecording{
         void onSuccess(File file);
         void onFailure(String msg);
