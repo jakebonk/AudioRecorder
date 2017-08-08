@@ -106,6 +106,7 @@ public class AudioDialog {
 
     public AudioDialog build(Context context){
         this.context = context;
+        builder = new AlertDialog.Builder(context);
         return this;
     }
 
@@ -116,7 +117,6 @@ public class AudioDialog {
     public AudioDialog show(){
         LayoutInflater inflater = LayoutInflater.from(context);
         dialogLayout = inflater.inflate(R.layout.audio_recorder_layout,null);
-        builder = new AlertDialog.Builder(context);
         builder.setView(dialogLayout);
         ad = builder.show();
         RelativeLayout rlRecording = (RelativeLayout)dialogLayout.findViewById(R.id.rlRecording);
