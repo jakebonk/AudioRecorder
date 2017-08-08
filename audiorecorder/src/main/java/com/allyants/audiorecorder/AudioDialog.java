@@ -1,11 +1,12 @@
 package com.allyants.audiorecorder;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.view.DragEvent;
@@ -212,7 +213,7 @@ public class AudioDialog {
                     while(isListening) {
                         seekBar.setProgress(mediaRecorder.getMaxAmplitude());
                         final Long time = SystemClock.uptimeMillis() - startTime;
-                        ((Activity)context).runOnUiThread(new Runnable() {
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
                             @Override
                             public void run() {
                                 tvTime.setText(longToTime(time));
