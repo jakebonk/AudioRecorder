@@ -109,6 +109,10 @@ public class AudioDialog {
         return this;
     }
 
+    public void setType(int type){
+        builder.create().getWindow().setType(type);
+    }
+
     public AudioDialog show(){
         LayoutInflater inflater = LayoutInflater.from(context);
         dialogLayout = inflater.inflate(R.layout.audio_recorder_layout,null);
